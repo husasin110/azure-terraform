@@ -1,0 +1,51 @@
+name: 'Terraform Enterprise App Deployment'
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # Allows you to trigger the pipeline manually from the GitHub UI
+
+# These environment variables authenticate Terraform with Azure
+env:
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+jobs:
+  terraform:
+    name: 'Terraform Deploy'
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Pull the code from your repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Install the correct version of Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0" # Update to match your local version
+
+      # 3. Initialize the Azure backend
+      - name: Terraform Init
+        run: terraform init
+
+      # 4. Check formatting (Optional but recommended)
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      # 5. Generate the execution plan
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out=tfplan
+        
+      # 6. Apply the configuration (Only runs on the main branch)
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan
