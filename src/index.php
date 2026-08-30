@@ -1,9 +1,8 @@
-<!DOCT<?php
-// Azure SQL Database credentials
+<?php
 $host = getenv('DB_SERVER') ?: 'sql-entapp-30278.database.windows.net';
 $db   = getenv('DB_NAME') ?: 'sqldb-enterprise-app';
 $user = getenv('DB_USER') ?: 'sqladmin';
-$pass = getenv('DB_PASSWORD') ?: 'YOUR_SQL_ADMIN_PASSWORD';
+$pass = getenv('DB_PASSWORD') ?: '';
 
 $conn = null;
 $message = "";
@@ -24,7 +23,7 @@ try {
         $message = "Data successfully stored in Azure SQL!";
     }
 } catch (Exception $e) {
-    $message = "Database connection error: " . htmlspecialchars($e->getMessage());
+    $message = "Connection/Driver Error: " . htmlspecialchars($e->getMessage());
 }
 ?>
 <!DOCTYPE html>
@@ -39,7 +38,7 @@ try {
         input[type="text"] { width: 100%; padding: 0.75rem; margin: 0.5rem 0 1rem 0; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 6px; box-sizing: border-box; }
         button { background: #38bdf8; color: #0f172a; border: none; padding: 0.75rem; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; }
         button:hover { background: #7dd3fc; }
-        .msg { background: #065f46; color: #34d399; padding: 0.5rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.875rem; text-align: center; }
+        .msg { background: #1e3a8a; color: #93c5fd; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem; word-break: break-word; }
         ul { padding-left: 20px; color: #94a3b8; max-height: 150px; overflow-y: auto; }
         li { margin-bottom: 0.25rem; font-size: 0.9rem; }
     </style>
