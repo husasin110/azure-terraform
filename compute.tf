@@ -32,6 +32,28 @@ resource "azurerm_linux_web_app" "app" {
   resource_group_name = azurerm_resource_group.rg.name
   service_plan_id     = azurerm_service_plan.asp.id
 
+  virtual_network_subnet_id = azurerm_subnet.snet_appservice.id
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  site_config {
+    always_on              = true
+    vnet_route_all_enabled = true
+    
+    # ADD THIS APPLICATION STACK BLOCK:
+    application_stack {
+      php_version = "8.2"
+    }
+  }
+
+  app_settings = {
+    "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.appinsights.instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.appinsights.connection_string
+    "DB_PASSWORD"                           = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.kv.name};SecretName=sql-admin-password)"
+  }
+}
   # ---------------------------------------------------------
   # VNET INTEGRATION & IDENTITY
   # ---------------------------------------------------------
