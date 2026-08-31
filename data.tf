@@ -19,17 +19,17 @@ resource "random_password" "sql_admin_password" {
 # ---------------------------------------------------------
 
 resource "azurerm_key_vault" "kv" {
-  name                        = "kv-entapp-${random_integer.suffix.result}"
-  location                    = azurerm_resource_group.rg.location
-  resource_group_name         = azurerm_resource_group.rg.name
-  tenant_id                   = data.azurerm_client_config.current.tenant_id
-  sku_name                    = "standard"
-  
+  name                = "kv-entapp-${random_integer.suffix.result}"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  sku_name            = "standard"
+
   # Enterprise Security: Disable public internet access
   public_network_access_enabled = false
 
   # We use RBAC instead of older Access Policies for modern identity management
-  enable_rbac_authorization     = true 
+  enable_rbac_authorization = true
 }
 
 resource "azurerm_private_endpoint" "pe_kv" {
