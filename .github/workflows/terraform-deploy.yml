@@ -7,9 +7,8 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch: # Allows you to trigger the pipeline manually from the GitHub UI
+  workflow_dispatch:
 
-# These environment variables authenticate Terraform with Azure
 env:
   ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
   ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
@@ -18,34 +17,59 @@ env:
 
 jobs:
   terraform:
-    name: 'Terraform Deploy'
+    name: 'Terraform & App Deploy'
     runs-on: ubuntu-latest
     
     steps:
-      # 1. Pull the code from your repository
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Install the correct version of Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.9.0" # Update to match your local version
+          terraform_version: "1.9.0"
 
-      # 3. Initialize the Azure backend
       - name: Terraform Init
         run: terraform init
 
-      # 4. Check formatting (Optional but recommended)
       - name: Terraform Format
-        run: terraform fmt -check
+        run: terraform fmt
 
-      # 5. Generate the execution plan
       - name: Terraform Plan
         id: plan
         run: terraform plan -out=tfplan
         
-      # 6. Apply the configuration (Only runs on the main branch)
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: terraform apply -auto-approve tfplan
+
+      - name: Azure Login
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
+
+      - name: Clean Previous Zip Packages
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: rm -f app.zip
+
+      - name: Package Application Files
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: |
+          cd src
+          zip -r ../app.zip .
+
+      - name: Dynamically Find App Service Name
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: |
+          APP_NAME=$(az webapp list --query "[?starts_with(name, 'app-enterprise')].name | [0]" -o tsv)
+          echo "Found App Service: $APP_NAME"
+          echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
+
+      - name: Deploy to Azure Web App
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: '${{ env.APP_NAME }}'
+          package: 'app.zip'
+          clean: true
