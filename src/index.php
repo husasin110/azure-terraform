@@ -11,7 +11,8 @@ $message = "";
 $error = "";
 
 try {
-    $dsn = "sqlsrv:server=$host;Database=$db";
+    // Use native PDO ODBC driver built into Azure Linux App Service
+    $dsn = "odbc:Driver={ODBC Driver 18 for SQL Server};Server=$host,1433;Database=$db;Encrypt=yes;TrustServerCertificate=yes;";
     $conn = new PDO($dsn, $user, $pass);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
